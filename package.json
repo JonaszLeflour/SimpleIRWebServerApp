@@ -1,0 +1,16 @@
+{
+  "name": "mini-map-server",
+  "version": "1.0.0",
+  "description": "We want a **seller** to be able to control where the **client** will be in a VR appartment. For that, we need a web site, where the **seller** will be able to see where the **client** is located in realtime and be able to teleport the **client**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2"
+  }
+}
