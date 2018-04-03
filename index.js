@@ -48,7 +48,7 @@ function getIp(req){
 }
 
 //return current position (for the specified VR app)
-app.post('/get-client-infos', function (req, res) {
+app.get('/get-client-infos', function (req, res) {
 	var appID = req.body.appid;
 	res.set('Access-Control-Allow-Origin', '*');
 	if(vr_side_apps.has(appID)){
@@ -95,9 +95,10 @@ app.get('/client', function (req, res) {
   return res.status(200).json(Teleport)
 })*/
 
-app.post('/get-client', function (req, res) {    
+app.get('/client', function (req, res) {    
     // if the array contains at least one element
-	var appID = req.body.appid;
+	//var appID = req.body.appid;
+	var appID = getIp(req);
 	if(!vr_side_apps.has(appID)){
 		return res.status(404).end();
 	}
