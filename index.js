@@ -14,10 +14,18 @@ app.set('port', (process.env.PORT || 3000));
 let Commands = []
 let ClientCurrentPosition = {}
 
+let maxConnection = 100;
 
 //multiplayer
 let disconectCheckDelay=10;
 let disconectTimeout=3;
+
+/** structure :
+*	vr_side_apps[VR APP ID] = {ClientCurrentPosition,Commands,timeSinceUpdate}
+* 	*ClientCurrentPosition* is the last position data from the VR application
+*	*Commands* is the pile of inputs sent from the VR application
+*	*timeSinceUpdate* is the total amount of circle since the VR application last communicated with this server. If it reaches *disconectTimeout*, *vr_side_apps[VR APP ID]* is deleted
+*/
 let vr_side_apps = new Map();
 
 function detectTimeout() {
@@ -39,15 +47,14 @@ function getIp(req){
          req.connection.socket.remoteAddress;
 }
 
-//return current position (for the specified app)
-app.get('/client-infos', function (req, res) {
+//return current position (for the specified VR app)
+app.post('/get-client-infos', function (req, res) {
 	var appID = req.body.appid;
-	console.log("CLIENT INFO : APPID=",req.body);
+	res.set('Access-Control-Allow-Origin', '*');
 	if(vr_side_apps.has(appID)){
-		res.set('Access-Control-Allow-Origin', '*')
-		return res.status(200).json(vr_side_apps[appID].ClientCurrentPosition)
+		return res.status(200).json(vr_side_apps.get(appID).ClientCurrentPosition).end();
 	}
-	return res.status(404)
+	return res.status(404).end();
 })
 
 
@@ -66,14 +73,11 @@ app.post('/client-infos', function (req, res) {
 	var ip = getIp(req);
 		 
 	//ClientCurrentPosition = req.body
-	
+	var data = {ClientCurrentPosition:req.body,Commands:[],timeSinceUpdate:0};
 	if(!vr_side_apps.has(ip)){
 		console.log("NEW CONNECTION FROM VR APP:", ip)
 	}
-	vr_side_apps.set(ip,{ClientCurrentPosition:req.body,Commands:[],timeSinceUpdate:0})
-
-
-
+	vr_side_apps.set(ip,data)
   
   /*console.log(
     "CLIENT",
@@ -91,16 +95,16 @@ app.get('/client', function (req, res) {
   return res.status(200).json(Teleport)
 })*/
 
-app.get('/client', function (req, res) {    
+app.post('/get-client', function (req, res) {    
     // if the array contains at least one element
 	var appID = req.body.appid;
 	if(!vr_side_apps.has(appID)){
 		return res.status(404).end();
 	}
 	
-    if (vr_side_apps[appID].Commands.length > 0) {
+    if (vr_side_apps.get(appID).Commands.length > 0) {
         // Pop the last element ( get last element, then remove from the array)
-        const command = vr_side_apps[appID].Commands.shift()  //pop()
+        const command = vr_side_apps.get(appID).Commands.shift()  //pop()
         // send the command
         
         console.log(
@@ -140,13 +144,13 @@ app.post('/seller', function (req, res) {
 		req.body.z = parseInt(req.body.z)
 		req.body.rotation = parseInt(req.body.rotation)
 		
-		vr_side_apps[appID].Commands.push(req.body)
+		vr_side_apps.get(appID).Commands.push(req.body)
 	
 	}
   
   if (req.body.command === "ChangeStyle"){
 	  console.log("PUSHING",JSON.stringify(req.body, null, 2))
-	  vr_side_apps[appID].Commands.push(req.body)
+	  vr_side_apps.get(appID).Commands.push(req.body)
   }
   
   res.status(200).end()
